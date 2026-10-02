@@ -1,90 +1,247 @@
-# -NETWORKWALKS-B083-WK4--Mediroza-V1
-# 🔒 Mediroza Hospital - Penetration Testing Report
+# 🏥 Mediroza Hospital — Web Application Penetration Testing Report
 
-![Security Assessment](https://img.shields.io/badge/Security-Critical%20Vulnerabilities%20Found-red)
-![Date](https://img.shields.io/badge/Assessment%20Date-October%202026-blue)
-![Status](https://img.shields.io/badge/Status-Report%20Submitted-yellow)
+> **From Recon to Root: A Full-Chain Compromise via Exposed Backups and Weak Document Security**
 
-## 📋 Executive Summary
+| Field | Details |
+|---|---|
+| **Target** | `https://medirozahospital.com` |
+| **Assessment Type** | Web Application Penetration Testing |
+| **Report Date** | October 2, 2026 |
+| **Classification** | Confidential |
+| **Prepared By** | Jyotipriyo Saha |
+| **Contact** | sjyotipriyo@gmail.com |
 
-**Target:** https://medirozahospital.com  
-**Assessment Type:** Web Application Penetration Testing  
-**Date:** October 2026  
-**Risk Level:** 🔴 **CRITICAL**
+---
 
-This penetration test was conducted on the Mediroza Hospital website to identify security vulnerabilities. The assessment revealed **multiple critical security flaws** including SQL Injection vulnerabilities, exposed sensitive files, and leaked database credentials. Immediate remediation is strongly recommended to prevent data breaches and unauthorized access to patient information.
+## 📋 Table of Contents
+
+1. [Executive Summary](#-executive-summary)
+2. [Scope](#-scope)
+3. [Findings Summary](#-findings-summary)
+4. [Detailed Findings](#-detailed-findings)
+5. [Attack Chain Analysis](#-attack-chain-analysis)
+6. [Recommendations / Remediation Plan](#-recommendations--remediation-plan)
+7. [Tools & Methodology](#-tools--methodology-appendix)
+8. [Conclusion](#-conclusion)
+9. [Disclaimer](#-disclaimer)
+
+---
+
+## 🧭 Executive Summary
+
+This report details the findings of a Web Application Penetration Test conducted against the **Mediroza Hospital** public-facing website. The objective of the engagement was to identify exploitable vulnerabilities that could compromise the confidentiality, integrity, or availability of the application and its underlying data.
+
+The assessment uncovered a **critical, chainable attack path**: a publicly accessible legacy directory (`/old/`) exposed a database backup file and multiple internal PDF documents. Combined with a confirmed **SQL Injection** vulnerability on the primary application, an attacker could achieve full database compromise, exfiltrate Protected Health Information (PHI) / Personally Identifiable Information (PII), and bypass document-level password protection through offline credential cracking.
+
+**Key risks identified:**
+
+- 🔴 **SQL Injection** on the primary web application, enabling direct database manipulation and extraction.
+- 🔴 **Exposed legacy/backup infrastructure** (`/old/`), serving as the initial foothold for the entire attack chain.
+- 🔴 **Publicly accessible `.sql` database backup**, leaking patient records and credentials in plaintext.
+- 🟠 **Sensitive PDF documents** protected by weak passwords, recoverable via offline hash cracking.
+
+**Business Impact:** Given the healthcare context, exploitation of these vulnerabilities could result in large-scale **PHI/PII breach**, regulatory non-compliance (**HIPAA / GDPR**), reputational damage, and potential legal liability. Immediate remediation is strongly advised.
 
 ---
 
 ## 🎯 Scope
 
-| Target | URL | Status |
-|--------|-----|--------|
-| Primary Website | https://medirozahospital.com | Vulnerable |
-| Legacy Directory | https://medirozahospital.com/old/ | Exposed |
+| Target Type | URL / Path |
+|---|---|
+| **Primary Website** | `https://medirozahospital.com` |
+| **Legacy / Backup Directory** | `https://medirozahospital.com/old/` |
+
+The assessment was limited to the web application and publicly accessible directories/files reachable from the above endpoints. No internal network, infrastructure, or social engineering testing was performed as part of this engagement.
 
 ---
 
-## 🚨 Critical Findings
+## 📊 Findings Summary
 
-### 1. SQL Injection Vulnerability
-- **Severity:** 🔴 Critical
-- **Location:** https://medirozahospital.com
-- **Impact:** Database compromise, data exfiltration
-- **Status:** Open
-
-### 2. Exposed Legacy Directory
-- **Severity:** 🔴 Critical
-- **Location:** https://medirozahospital.com/old/
-- **Impact:** Access to deprecated files and backups
-- **Status:** Open
-
-### 3. Database Backup Exposure
-- **Severity:** 🔴 Critical
-- **Location:** `/old/*.sql`
-- **Impact:** Complete database compromise, patient PII exposure
-- **Status:** Open
-
-### 4. PDF Document Vulnerabilities
-- **Severity:** 🟠 High
-- **Files Found:** 3 PDF documents
-- **Impact:** Confidential document access
-- **Status:** Passwords Cracked ✅
+| # | Severity | Finding | Count |
+|---|:---:|---|:---:|
+| 1 | 🔴 **Critical** | SQL Injection | 1 |
+| 2 | 🔴 **Critical** | Exposed Legacy Directory | 1 |
+| 3 | 🔴 **Critical** | Exposed Database Backup File (`.sql`) | 1 |
+| 4 | 🟠 **High** | Sensitive PDF Documents (Password-Cracked) | 3 |
 
 ---
 
-## 🔐 Password Hash Analysis
+## 🔍 Detailed Findings
 
-### Extracted PDF Password Hashes
+### FINDING #1 — SQL Injection Vulnerability
+**Severity: 🔴 CRITICAL**
 
-| # | Hash | Cracked Password | Strength |
-|---|------|------------------|----------|
-| 1 | `$pdf$2*3*128*4294967292*1*32*3361663365326235643333353531613238303137316238333238373763353339*32*ef16c52ab8efce2c18c79e9d28895b5928bf4e5e4e758a4164004e56fffa0108*32*c431fab9cc5ef7b59c244b61b745f71ac5ba427b1b9102da468e77127f1e69d6` | `123456` | 🔴 Very Weak |
-| 2 | `$pdf$2*3*128*4294967292*1*32*3166346338373236356437626464363834663737303265633666363264616463*32*39f4e6b0aedf12344c340ffb39f8905528bf4e5e4e758a4164004e56fffa0108*32*408b37bcf12da873d7f2840f3c1b917a023961ded4c8164d38e46e9655e66775` | `password` | 🔴 Very Weak |
-| 3 | `$pdf$2*3*128*4294967292*1*32*3261393066326130336634386337323631306164373264323130316137616538*32*5090fa0a5dba99cb97c9d140cd23119428bf4e5e4e758a4164004e56fffa0108*32*58e03d692cf37b50b0b5eaa189fcbd372260a949c8992ad7b44fd13e2b40c1f8` | `!@#$%^&` | 🟡 Weak |
+**Description**
+The application is vulnerable to SQL Injection, allowing an attacker to manipulate backend database queries by injecting malicious input through user-controllable parameters.
 
-### Password Analysis
-- **Hash Type:** PDF 2.3 (Acrobat) - AES 128-bit encryption
-- **Format:** John the Ripper `$pdf$` format
-- **Common Patterns:** Dictionary words, sequential characters
-- **Recommendation:** Implement strong password policy (min 12 chars, mixed case, symbols, no dictionary words)
+**Affected URL / Location**
+```
+https://medirozahospital.com
+```
+
+**Impact**
+- Unauthorized access to the backend database
+- Data exfiltration of sensitive records
+- Authentication bypass
+- Complete database compromise
+
+**Remediation**
+- ✅ Implement parameterized queries / prepared statements
+- ✅ Use a vetted ORM framework instead of raw SQL string concatenation
+- ✅ Apply strict server-side input validation and sanitization
+- ✅ Deploy a Web Application Firewall (WAF) as a compensating control
 
 ---
 
-## ## 🛠️ Tools Used
+### FINDING #2 — Exposed Legacy Directory
+**Severity: 🔴 CRITICAL**
 
-### Online Tools
-| Tool | Purpose | URL |
-|------|---------|-----|
-| PDF Hash Extractor | Extract hashes from PDF files | https://www.onlinehashcrack.com/tools-pdf-hash-extractor.php |
-| Network Walks Password Cracker | Online hash cracking | https://networkwalks.com/password-cracker/ |
+**Description**
+A legacy/backup directory was found to be publicly accessible, exposing outdated application code, configuration artifacts, and data that should never have been reachable from the internet.
 
-### Local Tools (Alternative)
-| Tool | Purpose | Version |
-|------|---------|---------|
-| SQLMap | SQL Injection detection | Latest |
-| pdf2john.py | PDF hash extraction (local) | Latest |
-| John the Ripper | Password cracking (local) | 1.9.0+ |
-| Hashcat | GPU password cracking (local) | v6.0+ |
-| Dirb/Dirbuster | Directory enumeration | Latest |
+**Affected URL / Location**
+```
+https://medirozahospital.com/old/
+```
+
+**Impact**
+- Access to deprecated and potentially unpatched functionality
+- Disclosure of internal system architecture
+- Served as the **initial entry point** for the entire attack chain (see [Attack Chain Analysis](#-attack-chain-analysis))
+
+**Remediation**
+- ✅ Remove or restrict access to the `/old/` directory immediately
+- ✅ If retained for operational reasons, enforce authentication + IP allow-listing
+- ✅ Relocate all backup files outside the web root entirely
+
 ---
+
+### FINDING #3 — Exposed Database Backup File
+**Severity: 🔴 CRITICAL**
+
+**Description**
+A database backup file (`.sql`) was discovered inside the exposed `/old/` directory. The file contained highly sensitive data, including patient records, credential material, and internal system information — in plaintext and directly downloadable.
+
+**Affected URL / Location**
+```
+https://medirozahospital.com/old/[filename].sql
+```
+
+**Impact**
+- Complete database compromise without needing to exploit the live application
+- Exposure of patient PII (Personally Identifiable Information)
+- Credential theft (application and/or database accounts)
+- Regulatory compliance violations (**HIPAA / GDPR**)
+
+**Remediation**
+- ✅ Immediately remove exposed SQL backup files from any web-accessible path
+- ✅ Rotate **all** database credentials found in the backup
+- ✅ Audit database access logs for signs of unauthorized access or prior exfiltration
+- ✅ Implement secure, access-controlled backup storage practices (e.g., encrypted, off-web-root, access-logged)
+
+---
+
+### FINDING #4 — Sensitive PDF Documents (Password Protection Bypassed)
+**Severity: 🟠 HIGH**
+
+**Description**
+Three (3) PDF documents containing sensitive hospital/internal information were discovered within the exposed directory structure. The documents were password-protected; however, the protection was defeated through offline hash extraction and cracking, demonstrating that the applied passwords were weak and insufficient as a control.
+
+**Documents Found:** `3` PDF files
+
+**Impact**
+- Exposure of confidential hospital documents
+- Potential disclosure of patient-related data
+- Disclosure of internal business processes and procedures
+
+**Remediation**
+- ✅ Remove sensitive documents from publicly accessible storage
+- ✅ Implement proper, role-based access controls for document repositories
+- ✅ Encrypt sensitive files at rest using strong, modern encryption
+- ✅ Enforce strong, unique passwords for any document-level protection (and treat it as a secondary control, not a substitute for access control)
+
+---
+
+## ⚔️ Attack Chain Analysis
+
+The following attack path was successfully demonstrated end-to-end, illustrating how a single exposed directory escalated into full data compromise:
+
+1. **Initial Reconnaissance** — Mapped the target application and identified the publicly accessible `/old/` legacy directory.
+2. **Directory Enumeration** — Brute-forced the directory structure to enumerate hidden files and subdirectories within `/old/`.
+3. **File Discovery** — Identified and downloaded an exposed database backup (`.sql`) and three PDF documents.
+4. **Backup Analysis** — Parsed the `.sql` backup, revealing patient records, internal data, and credential material.
+5. **PDF Hash Extraction** — Extracted the crackable hash from each password-protected PDF using `pdf2john`.
+6. **Offline Password Cracking** — Cracked the extracted hashes using `hashcat`, recovering the PDF passwords and gaining full access to document contents.
+7. **SQL Injection Validation** — Confirmed a SQL Injection vulnerability on the primary application, validating a second, independent path to full database compromise.
+8. **Impact Validation** — Correlated findings to confirm a complete, realistic attack chain from unauthenticated recon to sensitive data exposure.
+
+```mermaid
+flowchart LR
+    A[🔎 Recon] --> B[📂 Directory Enumeration]
+    B --> C[⬇️ Backup & PDF Download]
+    C --> D[🔑 pdf2john Hash Extraction]
+    D --> E[💥 Hashcat Cracking]
+    B --> F[💉 SQL Injection Confirmed]
+    E --> G[📄 Document Compromise]
+    F --> H[🗄️ Database Compromise]
+    G --> I((Full Data Exposure))
+    H --> I
+```
+
+---
+
+## 🛠 Recommendations / Remediation Plan
+
+### 🚨 Immediate Actions (24–48 Hours)
+1. ✅ Remove the `/old/` directory from public access
+2. ✅ Delete exposed SQL backup files from all web-accessible locations
+3. ✅ Rotate all database credentials discovered in the backup
+4. ✅ Review and restrict access to the discovered PDF documents
+5. ✅ Patch the confirmed SQL Injection vulnerability
+
+### 🗓 Short-Term (1–2 Weeks)
+- Deploy a Web Application Firewall (WAF)
+- Conduct a full source code review targeting injection vulnerabilities
+- Implement secure, automated backup procedures (encrypted, off-web-root)
+- Enable directory listing/indexing protection across all web directories
+
+### 📆 Long-Term (1–3 Months)
+- Establish a recurring (quarterly/bi-annual) penetration testing program
+- Implement security awareness training for development and IT staff
+- Deploy a SIEM solution for centralized logging and monitoring
+- Pursue relevant compliance certification (e.g., HIPAA technical safeguards audit)
+
+---
+
+## 🧰 Tools & Methodology (Appendix)
+
+| Category | Tools / Techniques |
+|---|---|
+| **Directory Enumeration** | `ffuf` / `DirBuster` |
+| **SQL Injection Testing** | Manual testing, SQLi testing tooling |
+| **Credential/Hash Extraction** | `pdf2john` |
+| **Offline Password Cracking** | `Hashcat` / `John the Ripper` |
+
+**Methodology:** Testing followed an informal black-box approach aligned with industry-standard practices, consistent with the **OWASP Testing Guide** and **OWASP Top 10** categories.
+
+**References:**
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
+
+---
+
+## ✅ Conclusion
+
+The Mediroza Hospital website exhibits **critical security vulnerabilities** that pose significant risk to patient data confidentiality and overall system integrity. The combination of SQL Injection, an exposed legacy directory, a publicly downloadable database backup, and weakly protected PDF documents forms a **complete, low-skill attack chain** capable of resulting in a large-scale data breach.
+
+> **Overall Risk Rating: 🔴 CRITICAL — Immediate Action Required**
+
+---
+
+## ⚖️ Disclaimer
+
+This assessment was conducted for **educational and authorized security research purposes** as part of a structured penetration testing training program. All testing activities were performed with the understanding that this is a **portfolio/demonstration exercise**. This document does not endorse or authorize unauthorized testing of any system. Always obtain **explicit written authorization** before conducting security assessments against any target.
+
+---
+
+<p align="center"><sub>Report prepared by <strong>Jyotipriyo Saha</strong> · sjyotipriyo@gmail.com</sub></p>
