@@ -71,17 +71,22 @@ This penetration test was conducted on the Mediroza Hospital website to identify
 
 ---
 
-## 🛠️ Tools Used
+## ## 🛠️ Tools Used
 
+### Online Tools
+| Tool | Purpose | URL |
+|------|---------|-----|
+| PDF Hash Extractor | Extract hashes from PDF files | https://www.onlinehashcrack.com/tools-pdf-hash-extractor.php |
+| Network Walks Password Cracker | Online hash cracking | https://networkwalks.com/password-cracker/ |
+
+### Local Tools (Alternative)
 | Tool | Purpose | Version |
 |------|---------|---------|
 | SQLMap | SQL Injection detection | Latest |
-| pdf2john.py | PDF hash extraction | Latest |
-| John the Ripper | Password cracking | 1.9.0+ |
-| Hashcat | GPU password cracking | v6.0+ |
+| pdf2john.py | PDF hash extraction (local) | Latest |
+| John the Ripper | Password cracking (local) | 1.9.0+ |
+| Hashcat | GPU password cracking (local) | v6.0+ |
 | Dirb/Dirbuster | Directory enumeration | Latest |
-| Burp Suite | Web proxy & testing | Professional |
-
 ---
 
 ## 📁 Repository Structure
