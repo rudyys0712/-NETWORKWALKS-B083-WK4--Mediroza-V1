@@ -88,5 +88,3 @@ This penetration test was conducted on the Mediroza Hospital website to identify
 | Hashcat | GPU password cracking (local) | v6.0+ |
 | Dirb/Dirbuster | Directory enumeration | Latest |
 ---
-
-## 📁 Repository Structure
